@@ -46,3 +46,19 @@ Would show (on my phone) the paeg fro that booking and even let me cancel or tra
 -----------------------------------------------------------------------------
 How I fixed it
 
+This part was kind of hard to find a good solution for. Personally I think the most secure option would have been to get rid of the whole 
+device handoff link entirely. But to preserve its function and dd security I had to do a couple of things:
+app.before_request no longer does  token = request.args.get("sid") or request.cookies.get("hold_session")
+and instead does token = request.cookies.get("hold_session")
+This makes it so the sid does not authenticate the browser on any page of the site.
+Next in app.get("/me"), I removed the check for @login_required and instead grabs the sid if available and returns a tmp_user that
+is used in a duplicate logic of the normal /me page.
+This way the sid logic is isolated to only work on the /me page and does nothing on any other page, which is more secure because
+nothing on the /me page can change the system state.
+It also didn't copy the ta's logic because I am assuming that a ta should be logged in to view their bookings regardless, which might
+have been a creative freedom by me.
+
+In a test, copying the link for officehours/me?sid=4e5636d63d5b21fc63b8e492f5ddee47c3f459984c9eb4dc
+and giving it to myphone properly opened the page, with the top of the page hinting that I was not in fact signed in.
+Visiting officehours/bookings/3?sid=4e5636d63d5b21fc63b8e492f5ddee47c3f459984c9eb4dc
+on my phone forced a redirect as wanted.

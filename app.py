@@ -276,6 +276,9 @@ def mine():
         conn.close()
         return render_template("mine.html", bookings=bookings, sid=sid)
 
+    if not g.user: #check if user is logged in. Only here to prevent server error 500 if you visit /me while not logged in.
+        return redirect("/login")
+    
     # no temp_user uses the default logic
     conn = get_db()
     if current_user()["role"] == "ta":
