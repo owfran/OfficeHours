@@ -25,10 +25,24 @@ The link lets you open your bookings page from any browser or device.
 It uses a sid to allow you to view your bookings without being logged in. Probably contains a security defect
 -----------------------------------------------------------------------------
 look for a security defect in the running system
+The device handoff link doesnt stop the person using it from interacting with he website even though it is only intended to let
+them view their bookings. It the sid for the link also matches the users cookie/token, which might couse other problems.
+logging out prevents somone with the cookie value from using the deviced handoff link or bypassing sign in, but as long as the user 
+is signed in,there will be a large vulnerability.
 
 
 -----------------------------------------------------------------------------
 document how to trigger it
+In a test, while running the site online.
+Created account and made a sign in link:
+officehours/me?sid=b8e4bec85a4287150b885915c3677256b7832dcc3bdd4612
+would show the bookings for that user.
 
+Opening the link on my phone works as expected and shows the bookings.
+Opening the link:
+officehours/bookings/3?sid=b8e4bec85a4287150b885915c3677256b7832dcc3bdd4612
+Would show (on my phone) the paeg fro that booking and even let me cancel or transfer booking depsite not being signed it.
 
 -----------------------------------------------------------------------------
+How I fixed it
+

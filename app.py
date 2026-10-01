@@ -34,7 +34,14 @@ def login_required(fn):
 def load_user():
     init_db()
     seed()
+    """
     token = request.args.get("sid") or request.cookies.get("hold_session")
+    """
+    cookie_token = request.cookies.get("hold_session")
+    #sid_token = request.args.get("sid")
+
+    token = cookie_token or None
+
     g.user = None
     g.session_token = None
     if not token:
@@ -224,10 +231,52 @@ def book_slot(slot_id):
     flash("You're on the list. Check My bookings for any note from the TA.")
     return redirect(url_for("mine"))
 
+# simple one time sql join to be used for the /me page when valid sid is present
+def user_from_sid(sid):
+    if not sid:
+        return None
+    conn = get_db()
+    row = conn.execute(
+        """
+        SELECT users.* FROM sessions
+        JOIN users ON users.id = sessions.user_id
+        WHERE sessions.token = ?
+        """,
+        (sid,),
+    ).fetchone()
+    conn.close()
+    return row
+
 
 @app.get("/me")
-@login_required
+#@login_required
+# cant check login required here because I got rid of it passing for a valid sid
 def mine():
+    sid = request.args.get("sid")
+    #
+    temp_user = user_from_sid(sid) #tests for valid sid and does the same return and render as normal user login.
+    if temp_user:
+        conn = get_db()
+        bookings = conn.execute(
+            """
+            SELECT
+                bookings.*,
+                slots.starts_at,
+                slots.location,
+                slots.topic,
+                users.display_name AS ta_name
+            FROM bookings
+            JOIN slots ON slots.id = bookings.slot_id
+            JOIN users ON users.id = slots.ta_id
+            WHERE bookings.student_id = ?
+            ORDER BY slots.starts_at
+            """,
+            (temp_user["id"],),
+        ).fetchall()
+        conn.close()
+        return render_template("mine.html", bookings=bookings, sid=sid)
+
+    # no temp_user uses the default logic
     conn = get_db()
     if current_user()["role"] == "ta":
         slots = conn.execute(
